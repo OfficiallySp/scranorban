@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scran or Ban - Vote on Food!</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍕 Scran or Ban 🚫</h1>
+            <p class="tagline">Would you eat it?</p>
+        </header>
+
+        <main>
+            <section class="voting-section">
+                <div class="image-container">
+                    <img id="foodImage" src="" alt="Food item" />
+                    <div class="loading" id="loading">Loading delicious food...</div>
+                </div>
+                
+                <div class="button-container">
+                    <button class="vote-btn scran-btn" id="scranBtn">
+                        <span class="emoji">😋</span>
+                        <span class="text">SCRAN</span>
+                        <span class="subtitle">I'd eat it!</span>
+                    </button>
+                    <button class="vote-btn ban-btn" id="banBtn">
+                        <span class="emoji">🤢</span>
+                        <span class="text">BAN</span>
+                        <span class="subtitle">No thanks!</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="stats-section">
+                <h2>📊 Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalVotes">0</div>
+                        <div class="stat-label">Total Votes</div>
+                    </div>
+                    <div class="stat-card scran-card">
+                        <div class="stat-value" id="scranCount">0</div>
+                        <div class="stat-label">Scran Votes</div>
+                        <div class="stat-percentage" id="scranPercentage">0%</div>
+                    </div>
+                    <div class="stat-card ban-card">
+                        <div class="stat-value" id="banCount">0</div>
+                        <div class="stat-label">Ban Votes</div>
+                        <div class="stat-percentage" id="banPercentage">0%</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="uniqueItems">0</div>
+                        <div class="stat-label">Unique Items</div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="history-section">
+                <div class="history-header">
+                    <h2>📜 Voting History</h2>
+                    <button class="clear-btn" id="clearHistoryBtn">Clear History</button>
+                </div>
+                <div class="history-list" id="historyList">
+                    <p class="no-history">No votes yet. Start voting!</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Powered by Foodish API</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
