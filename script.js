@@ -10,6 +10,7 @@ let votingData = {
 
 // DOM Elements
 const foodImage = document.getElementById('foodImage');
+const foodName = document.getElementById('foodName');
 const loading = document.getElementById('loading');
 const scranBtn = document.getElementById('scranBtn');
 const banBtn = document.getElementById('banBtn');
@@ -57,20 +58,40 @@ function saveData() {
     }
 }
 
+// Extract food name from image URL
+function extractFoodName(url) {
+    try {
+        // URL format: https://foodish-api.com/images/pizza/pizza1.jpg
+        const pathParts = url.split('/');
+        // Get the food category (second to last part)
+        const foodCategory = pathParts[pathParts.length - 2];
+        return foodCategory.replace(/-/g, ' ');
+    } catch (e) {
+        return 'Unknown Food';
+    }
+}
+
 // Fetch random food image from Foodish API
 async function loadNewFood() {
     try {
         loading.classList.remove('hidden');
         foodImage.classList.remove('loaded');
+        foodName.textContent = '';
         
         const response = await fetch('https://foodish-api.com/api/');
         const data = await response.json();
         
         if (data && data.image) {
+            const name = extractFoodName(data.image);
+            
             currentFood = {
                 imageUrl: data.image,
+                name: name,
                 timestamp: Date.now()
             };
+            
+            // Display food name
+            foodName.textContent = name;
             
             // Preload image
             const img = new Image();
@@ -114,6 +135,7 @@ function vote(voteType) {
     // Add to history
     votingData.history.unshift({
         imageUrl: imageUrl,
+        name: currentFood.name,
         vote: voteType,
         timestamp: Date.now()
     });
@@ -183,11 +205,13 @@ function renderHistory() {
         const timeString = formatTimeAgo(item.timestamp);
         const voteClass = item.vote === 'scran' ? 'scran' : 'ban';
         const voteText = item.vote === 'scran' ? '😋 SCRAN' : '🤢 BAN';
+        const foodNameText = item.name || extractFoodName(item.imageUrl);
         
         return `
             <div class="history-item">
-                <img class="history-thumbnail" src="${item.imageUrl}" alt="Food item" loading="lazy" />
+                <img class="history-thumbnail" src="${item.imageUrl}" alt="${foodNameText}" loading="lazy" />
                 <div class="history-details">
+                    <div class="history-food-name">${foodNameText}</div>
                     <div class="history-time">${timeString}</div>
                     <div class="history-date">${date.toLocaleString()}</div>
                 </div>

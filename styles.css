@@ -46,6 +46,16 @@ header h1 {
     animation: slideUp 0.5s ease-out;
 }
 
+.food-name {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #667eea;
+    text-align: center;
+    margin-bottom: 15px;
+    text-transform: capitalize;
+    min-height: 40px;
+}
+
 .image-container {
     position: relative;
     width: 100%;
@@ -64,15 +74,10 @@ header h1 {
     height: 100%;
     object-fit: cover;
     display: none;
-    transition: transform 0.3s ease;
 }
 
 #foodImage.loaded {
     display: block;
-}
-
-#foodImage:hover {
-    transform: scale(1.05);
 }
 
 .loading {
@@ -305,6 +310,13 @@ header h1 {
     display: flex;
     flex-direction: column;
     gap: 5px;
+}
+
+.history-food-name {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+    text-transform: capitalize;
 }
 
 .history-time {
