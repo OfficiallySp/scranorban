@@ -1,14 +1,11 @@
-// Storage keys
 const STORAGE_KEY = 'scranOrBanData';
 
-// State management
 let currentFood = null;
 let votingData = {
-    items: {}, // { imageUrl: { scran: count, ban: count, lastVoted: timestamp } }
-    history: [] // Array of vote objects
+    items: {},
+    history: []
 };
 
-// DOM Elements
 const foodImage = document.getElementById('foodImage');
 const foodName = document.getElementById('foodName');
 const loading = document.getElementById('loading');
@@ -23,20 +20,17 @@ const uniqueItemsEl = document.getElementById('uniqueItems');
 const historyList = document.getElementById('historyList');
 const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
-// Initialize app
 function init() {
     loadData();
     updateStats();
     renderHistory();
     loadNewFood();
     
-    // Event listeners
     scranBtn.addEventListener('click', () => vote('scran'));
     banBtn.addEventListener('click', () => vote('ban'));
     clearHistoryBtn.addEventListener('click', clearHistory);
 }
 
-// Load data from localStorage
 function loadData() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
@@ -49,7 +43,6 @@ function loadData() {
     }
 }
 
-// Save data to localStorage
 function saveData() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(votingData));
@@ -58,7 +51,6 @@ function saveData() {
     }
 }
 
-// Food image sources with different quality levels
 const foodSources = [
     {
         name: 'Foodish',
@@ -70,7 +62,7 @@ const foodSources = [
         })
     },
     {
-        name: 'TheMealDB',
+        name: 'TheMealDB Random',
         url: 'https://www.themealdb.com/api/json/v1/1/random.php',
         type: 'mixed',
         extract: (data) => ({
@@ -79,83 +71,172 @@ const foodSources = [
         })
     },
     {
-        name: 'Reddit-style Random Food',
-        url: null, // Custom handler
-        type: 'grotesque',
-        custom: async () => {
-            // Random "bad" food combinations and styles
-            const badFoodIds = [
-                '52819', // Bakewell tart (can look odd)
-                '52795', // Jamaican patty
-                '52944', // Escovitch fish
-                '52940', // Brown stew chicken
-                '52918', // Jamaican rice & peas
-                '53013', // Corba (Turkish soup - can look unappetizing)
-                '52855', // Chakchouka (looks messy)
-                '52956', // Dum aloo (can look grotesque)
-            ];
-            const randomId = badFoodIds[Math.floor(Math.random() * badFoodIds.length)];
-            const response = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${randomId}`);
-            const data = await response.json();
-            return {
-                imageUrl: data.meals[0].strMealThumb,
-                name: data.meals[0].strMeal + ' (might look weird)'
-            };
-        }
-    },
-    {
-        name: 'Random Meal Category',
-        url: null,
+        name: 'TheMealDB Category',
         type: 'mixed',
         custom: async () => {
-            // Get random category then random meal from it
             const categories = ['Beef', 'Chicken', 'Dessert', 'Lamb', 'Miscellaneous', 
                               'Pasta', 'Pork', 'Seafood', 'Side', 'Starter', 
                               'Vegan', 'Vegetarian', 'Breakfast', 'Goat'];
-            const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-            const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${randomCategory}`);
+            const category = categories[Math.floor(Math.random() * categories.length)];
+            const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${category}`);
             const data = await response.json();
-            const randomMeal = data.meals[Math.floor(Math.random() * data.meals.length)];
+            const meal = data.meals[Math.floor(Math.random() * data.meals.length)];
             return {
-                imageUrl: randomMeal.strMealThumb,
-                name: randomMeal.strMeal
+                imageUrl: meal.strMealThumb,
+                name: meal.strMeal
             };
         }
     },
     {
-        name: 'Strange Ingredients',
-        url: null,
-        type: 'grotesque',
+        name: 'TheMealDB Area',
+        type: 'mixed',
         custom: async () => {
-            // Foods with unusual ingredients that might look strange
-            const weirdIngredients = ['Liver', 'Kidney Beans', 'Lamb', 'Goat', 'Offal'];
-            const randomIngredient = weirdIngredients[Math.floor(Math.random() * weirdIngredients.length)];
-            const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${randomIngredient}`);
+            const areas = ['American', 'British', 'Canadian', 'Chinese', 'Croatian', 
+                         'Dutch', 'Egyptian', 'French', 'Greek', 'Indian', 
+                         'Irish', 'Italian', 'Jamaican', 'Japanese', 'Kenyan',
+                         'Malaysian', 'Mexican', 'Moroccan', 'Polish', 'Portuguese',
+                         'Russian', 'Spanish', 'Thai', 'Tunisian', 'Turkish', 'Vietnamese'];
+            const area = areas[Math.floor(Math.random() * areas.length)];
+            const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?a=${area}`);
             const data = await response.json();
             if (data.meals && data.meals.length > 0) {
-                const randomMeal = data.meals[Math.floor(Math.random() * data.meals.length)];
+                const meal = data.meals[Math.floor(Math.random() * data.meals.length)];
                 return {
-                    imageUrl: randomMeal.strMealThumb,
-                    name: randomMeal.strMeal + ' (strange ingredient)'
+                    imageUrl: meal.strMealThumb,
+                    name: `${meal.strMeal} (${area})`
                 };
             }
-            // Fallback to random meal
-            const fallback = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
-            const fallbackData = await fallback.json();
+            return await getRandomMealDB();
+        }
+    },
+    {
+        name: 'TheMealDB Ingredient',
+        type: 'mixed',
+        custom: async () => {
+            const ingredients = ['Chicken', 'Beef', 'Pork', 'Fish', 'Rice', 'Pasta', 
+                              'Potato', 'Cheese', 'Tomato', 'Egg', 'Bread', 'Onion'];
+            const ingredient = ingredients[Math.floor(Math.random() * ingredients.length)];
+            const response = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${ingredient}`);
+            const data = await response.json();
+            if (data.meals && data.meals.length > 0) {
+                const meal = data.meals[Math.floor(Math.random() * data.meals.length)];
+                return {
+                    imageUrl: meal.strMealThumb,
+                    name: meal.strMeal
+                };
+            }
+            return await getRandomMealDB();
+        }
+    },
+    {
+        name: 'TheMealDB Desserts',
+        type: 'always-good',
+        custom: async () => {
+            const response = await fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c=Dessert');
+            const data = await response.json();
+            if (data.meals && data.meals.length > 0) {
+                const meal = data.meals[Math.floor(Math.random() * data.meals.length)];
+                return {
+                    imageUrl: meal.strMealThumb,
+                    name: meal.strMeal
+                };
+            }
+            return await getRandomMealDB();
+        }
+    },
+    {
+        name: 'TheMealDB Breakfast',
+        type: 'always-good',
+        custom: async () => {
+            const response = await fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c=Breakfast');
+            const data = await response.json();
+            if (data.meals && data.meals.length > 0) {
+                const meal = data.meals[Math.floor(Math.random() * data.meals.length)];
+                return {
+                    imageUrl: meal.strMealThumb,
+                    name: meal.strMeal
+                };
+            }
+            return await getRandomMealDB();
+        }
+    },
+    {
+        name: 'TheMealDB Seafood',
+        type: 'mixed',
+        custom: async () => {
+            const response = await fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c=Seafood');
+            const data = await response.json();
+            if (data.meals && data.meals.length > 0) {
+                const meal = data.meals[Math.floor(Math.random() * data.meals.length)];
+                return {
+                    imageUrl: meal.strMealThumb,
+                    name: meal.strMeal
+                };
+            }
+            return await getRandomMealDB();
+        }
+    },
+    {
+        name: 'TheMealDB Vegetarian',
+        type: 'mixed',
+        custom: async () => {
+            const response = await fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c=Vegetarian');
+            const data = await response.json();
+            if (data.meals && data.meals.length > 0) {
+                const meal = data.meals[Math.floor(Math.random() * data.meals.length)];
+                return {
+                    imageUrl: meal.strMealThumb,
+                    name: meal.strMeal
+                };
+            }
+            return await getRandomMealDB();
+        }
+    },
+    {
+        name: 'TheMealDB Pasta',
+        type: 'mixed',
+        custom: async () => {
+            const response = await fetch('https://www.themealdb.com/api/json/v1/1/filter.php?c=Pasta');
+            const data = await response.json();
+            if (data.meals && data.meals.length > 0) {
+                const meal = data.meals[Math.floor(Math.random() * data.meals.length)];
+                return {
+                    imageUrl: meal.strMealThumb,
+                    name: meal.strMeal
+                };
+            }
+            return await getRandomMealDB();
+        }
+    },
+    {
+        name: 'TheMealDB Unusual',
+        type: 'grotesque',
+        custom: async () => {
+            const unusualIds = ['52819', '52795', '52944', '52940', '52918', 
+                              '53013', '52855', '52956', '53027', '53026'];
+            const id = unusualIds[Math.floor(Math.random() * unusualIds.length)];
+            const response = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
+            const data = await response.json();
             return {
-                imageUrl: fallbackData.meals[0].strMealThumb,
-                name: fallbackData.meals[0].strMeal
+                imageUrl: data.meals[0].strMealThumb,
+                name: data.meals[0].strMeal
             };
         }
     }
 ];
 
-// Extract food name from image URL
+async function getRandomMealDB() {
+    const response = await fetch('https://www.themealdb.com/api/json/v1/1/random.php');
+    const data = await response.json();
+    return {
+        imageUrl: data.meals[0].strMealThumb,
+        name: data.meals[0].strMeal
+    };
+}
+
 function extractFoodNameFromUrl(url) {
     try {
-        // URL format: https://foodish-api.com/images/pizza/pizza1.jpg
         const pathParts = url.split('/');
-        // Get the food category (second to last part)
         const foodCategory = pathParts[pathParts.length - 2];
         return foodCategory.replace(/-/g, ' ');
     } catch (e) {
@@ -163,24 +244,18 @@ function extractFoodNameFromUrl(url) {
     }
 }
 
-// Fetch random food image from various sources
 async function loadNewFood() {
     try {
         loading.classList.remove('hidden');
         foodImage.classList.remove('loaded');
         foodName.textContent = '';
         
-        // Randomly select a food source
         const randomSource = foodSources[Math.floor(Math.random() * foodSources.length)];
-        console.log(`Loading food from: ${randomSource.name} (${randomSource.type})`);
-        
         let foodData;
         
-        // Handle custom sources
         if (randomSource.custom) {
             foodData = await randomSource.custom();
         } else {
-            // Handle API-based sources
             const response = await fetch(randomSource.url);
             const data = await response.json();
             foodData = randomSource.extract(data);
@@ -194,12 +269,10 @@ async function loadNewFood() {
                 timestamp: Date.now()
             };
             
-            // Display food name with source indicator
-            const sourceEmoji = randomSource.type === 'always-good' ? '✨' : 
-                              randomSource.type === 'grotesque' ? '🤨' : '🎲';
-            foodName.textContent = `${sourceEmoji} ${foodData.name}`;
+            const emoji = randomSource.type === 'always-good' ? '✨' : 
+                         randomSource.type === 'grotesque' ? '🤨' : '🎲';
+            foodName.textContent = `${emoji} ${foodData.name}`;
             
-            // Preload image
             const img = new Image();
             img.onload = () => {
                 foodImage.src = foodData.imageUrl;
@@ -208,7 +281,7 @@ async function loadNewFood() {
             };
             img.onerror = () => {
                 console.error('Error loading image from', randomSource.name);
-                loadNewFood(); // Try again with different source
+                loadNewFood();
             };
             img.src = foodData.imageUrl;
         }
@@ -219,13 +292,11 @@ async function loadNewFood() {
     }
 }
 
-// Handle vote
 function vote(voteType) {
     if (!currentFood) return;
     
     const imageUrl = currentFood.imageUrl;
     
-    // Initialize item data if it doesn't exist
     if (!votingData.items[imageUrl]) {
         votingData.items[imageUrl] = {
             scran: 0,
@@ -234,11 +305,9 @@ function vote(voteType) {
         };
     }
     
-    // Increment vote count
     votingData.items[imageUrl][voteType]++;
     votingData.items[imageUrl].lastVoted = Date.now();
     
-    // Add to history
     votingData.history.unshift({
         imageUrl: imageUrl,
         name: currentFood.name,
@@ -246,30 +315,22 @@ function vote(voteType) {
         timestamp: Date.now()
     });
     
-    // Keep history to last 50 items
     if (votingData.history.length > 50) {
         votingData.history = votingData.history.slice(0, 50);
     }
     
-    // Save data
     saveData();
-    
-    // Update UI
     updateStats();
     renderHistory();
     
-    // Visual feedback
     const btn = voteType === 'scran' ? scranBtn : banBtn;
     btn.classList.add('voted');
     setTimeout(() => btn.classList.remove('voted'), 500);
     
-    // Load next food after short delay
     setTimeout(loadNewFood, 600);
 }
 
-// Update statistics display
 function updateStats() {
-    // Calculate totals
     let totalScran = 0;
     let totalBan = 0;
     
@@ -281,13 +342,11 @@ function updateStats() {
     const totalVotes = totalScran + totalBan;
     const uniqueItems = Object.keys(votingData.items).length;
     
-    // Update DOM
     totalVotesEl.textContent = totalVotes;
     scranCountEl.textContent = totalScran;
     banCountEl.textContent = totalBan;
     uniqueItemsEl.textContent = uniqueItems;
     
-    // Calculate percentages
     if (totalVotes > 0) {
         const scranPercent = Math.round((totalScran / totalVotes) * 100);
         const banPercent = Math.round((totalBan / totalVotes) * 100);
@@ -299,7 +358,6 @@ function updateStats() {
     }
 }
 
-// Render voting history
 function renderHistory() {
     if (votingData.history.length === 0) {
         historyList.innerHTML = '<p class="no-history">No votes yet. Start voting!</p>';
@@ -327,7 +385,6 @@ function renderHistory() {
     }).join('');
 }
 
-// Format timestamp to human-readable "time ago"
 function formatTimeAgo(timestamp) {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
     
@@ -349,7 +406,6 @@ function formatTimeAgo(timestamp) {
     return `${months} month${months > 1 ? 's' : ''} ago`;
 }
 
-// Clear all history and data
 function clearHistory() {
     if (confirm('Are you sure you want to clear all voting history and statistics? This cannot be undone.')) {
         votingData = {
@@ -363,7 +419,6 @@ function clearHistory() {
     }
 }
 
-// Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         vote('ban');
@@ -372,7 +427,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
